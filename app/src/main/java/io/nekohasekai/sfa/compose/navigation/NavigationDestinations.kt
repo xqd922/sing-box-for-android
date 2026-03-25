@@ -48,3 +48,15 @@ val bottomNavigationScreens =
         Screen.Log,
         Screen.Settings,
     )
+
+fun buildBottomNavigationScreens(
+    showGroups: Boolean,
+    showConnections: Boolean,
+): List<Screen> =
+    buildList {
+        add(Screen.Dashboard)
+        if (showGroups) add(Screen.Groups)
+        if (showConnections) add(Screen.Connections)
+        add(Screen.Log)
+        add(Screen.Settings)
+    }

@@ -1,0 +1,165 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version name (e.g. 7.0.0)"
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build Android APKs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sing-box core
+        uses: actions/checkout@v4
+        with:
+          repository: SagerNet/sing-box
+          ref: v1.13.3
+          path: sing-box
+          fetch-depth: 0
+
+      - name: Checkout Android client
+        uses: actions/checkout@v4
+        with:
+          path: sing-box-for-android
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "~1.25.8"
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r28
+
+      - name: Setup OpenJDK 17
+        run: |-
+          sudo apt-get update && sudo apt-get install -y openjdk-17-jdk-headless
+          /usr/lib/jvm/java-17-openjdk-amd64/bin/java --version
+
+      - name: Install gomobile
+        run: |-
+          cd sing-box
+          go install -v github.com/sagernet/gomobile/cmd/gomobile@v0.1.12
+          go install -v github.com/sagernet/gomobile/cmd/gobind@v0.1.12
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+
+      - name: Build libbox.aar
+        run: |-
+          cd sing-box
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make lib_android
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Copy AAR to Android project
+        run: |-
+          mkdir -p sing-box-for-android/app/libs
+          cp sing-box/libbox.aar sing-box-for-android/app/libs/
+          cp sing-box/libbox-legacy.aar sing-box-for-android/app/libs/
+
+      - name: Override version
+        if: inputs.version != ''
+        run: |-
+          cd sing-box-for-android
+          VERSION_CODE=$(grep VERSION_CODE version.properties | cut -d= -f2)
+          cat > version.properties << EOF
+          VERSION_CODE=${VERSION_CODE}
+          VERSION_NAME=${{ inputs.version }}
+          GO_VERSION=go1.25.8
+          EOF
+
+      - name: Generate signing keystore
+        run: |-
+          cd sing-box-for-android
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          else
+            keytool -genkey -v \
+              -keystore app/release.keystore \
+              -alias sfa \
+              -keyalg RSA -keysize 2048 -validity 36500 \
+              -storepass sfa123456 -keypass sfa123456 \
+              -dname "CN=xqd, OU=Personal, O=Personal, L=Unknown, ST=Unknown, C=CN"
+          fi
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+
+      - name: Setup signing properties
+        run: |-
+          cd sing-box-for-android
+          if [ -n "${{ secrets.KEYSTORE_PASS }}" ]; then
+            cat > local.properties << EOF
+          KEYSTORE_PASS=${{ secrets.KEYSTORE_PASS }}
+          ALIAS_NAME=${{ secrets.ALIAS_NAME }}
+          ALIAS_PASS=${{ secrets.ALIAS_PASS }}
+          EOF
+          else
+            cat > local.properties << EOF
+          KEYSTORE_PASS=sfa123456
+          ALIAS_NAME=sfa
+          ALIAS_PASS=sfa123456
+          EOF
+          fi
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle
+          key: gradle-${{ hashFiles('**/*.gradle.kts') }}
+
+      - name: Build APKs
+        run: |-
+          cd sing-box-for-android
+          chmod +x gradlew
+          ./gradlew :app:assembleOtherRelease :app:assembleOtherLegacyRelease
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Prepare release artifacts
+        id: prepare
+        run: |-
+          mkdir -p dist
+          cp sing-box-for-android/app/build/outputs/apk/other/release/*.apk dist/
+          cp sing-box-for-android/app/build/outputs/apk/otherLegacy/release/*.apk dist/
+          VERSION_NAME=$(grep VERSION_NAME sing-box-for-android/version.properties | cut -d= -f2)
+          echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-release
+          path: dist/*.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.prepare.outputs.version }}
+          name: v${{ steps.prepare.outputs.version }}
+          draft: false
+          prerelease: false
+          files: dist/*.apk
+          body: |
+            ## SFA v${{ steps.prepare.outputs.version }}
+
+            Based on sing-box core v1.13.3 (stable)
+
+            ### Downloads
+            - `SFA-*-arm64-v8a.apk` - 64-bit ARM (most devices)
+            - `SFA-*-armeabi-v7a.apk` - 32-bit ARM
+            - `SFA-*-x86_64.apk` - x86_64
+            - `SFA-*-universal.apk` - All architectures
+            - `SFA-*-legacy-android-5-*.apk` - Android 5.0+ support
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

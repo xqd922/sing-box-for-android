@@ -100,7 +100,7 @@ import io.nekohasekai.sfa.compose.navigation.NewProfileArgs
 import io.nekohasekai.sfa.compose.navigation.ProfileRoutes
 import io.nekohasekai.sfa.compose.navigation.SFANavHost
 import io.nekohasekai.sfa.compose.navigation.Screen
-import io.nekohasekai.sfa.compose.navigation.buildBottomNavigationScreens
+import io.nekohasekai.sfa.compose.navigation.bottomNavigationScreens
 import io.nekohasekai.sfa.compose.screen.configuration.ProfileImportHandler
 import io.nekohasekai.sfa.compose.screen.connections.ConnectionDetailsScreen
 import io.nekohasekai.sfa.compose.screen.connections.ConnectionsPage
@@ -657,22 +657,15 @@ class MainActivity :
                 add(Screen.Settings)
             }
 
-        val phoneBottomScreens = buildBottomNavigationScreens(
-            showGroups = showGroupsInNav,
-            showConnections = showConnectionsInNav,
-        )
+        val phoneBottomScreens = bottomNavigationScreens
 
         val allowedRoutes =
             buildSet {
                 add(Screen.Dashboard.route)
+                add(Screen.Groups.route)
+                add(Screen.Connections.route)
                 add(Screen.Log.route)
                 add(Screen.Settings.route)
-                if (showGroupsInNav) {
-                    add(Screen.Groups.route)
-                }
-                if (showConnectionsInNav) {
-                    add(Screen.Connections.route)
-                }
             }
 
         val pendingRoute = pendingNavigationRoute.value
@@ -777,30 +770,104 @@ class MainActivity :
                     modifier = Modifier.fillMaxSize(),
                 )
                 val showFab = !isSubScreen && (showStartFab || showStatusBar)
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = showFab,
-                    enter = scaleIn(),
-                    exit = scaleOut(),
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(20.dp),
-                ) {
-                    val isRunning =
-                        currentServiceStatus == Status.Started || currentServiceStatus == Status.Starting
-                    val isStopping = currentServiceStatus == Status.Stopping
-                    if (currentServiceStatus == Status.Stopped) {
-                        FloatingActionButton(
-                            onClick = { startService() },
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = stringResource(R.string.action_start),
+                val isRunning =
+                    currentServiceStatus == Status.Started || currentServiceStatus == Status.Starting
+                val isStopping = currentServiceStatus == Status.Stopping
+
+                if (useNavigationRail) {
+                    // Tablet: ExtendedFAB with uptime text
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showFab,
+                        enter = scaleIn(),
+                        exit = scaleOut(),
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(20.dp),
+                    ) {
+                        if (currentServiceStatus == Status.Stopped) {
+                            FloatingActionButton(
+                                onClick = { startService() },
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = stringResource(R.string.action_start),
+                                )
+                            }
+                        } else {
+                            ExtendedFloatingActionButton(
+                                onClick = {
+                                    if (isRunning || isStopping) {
+                                        dashboardViewModel.toggleService()
+                                    } else {
+                                        startService()
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector =
+                                        if (isRunning || isStopping) {
+                                            Icons.Default.Stop
+                                        } else {
+                                            Icons.Default.PlayArrow
+                                        },
+                                        contentDescription =
+                                        if (isRunning || isStopping) {
+                                            stringResource(R.string.stop)
+                                        } else {
+                                            stringResource(R.string.action_start)
+                                        },
+                                    )
+                                },
+                                text = {
+                                    when {
+                                        isRunning && dashboardUiState.serviceStartTime != null -> {
+                                            UptimeText(startTime = dashboardUiState.serviceStartTime!!)
+                                        }
+                                        currentServiceStatus == Status.Started -> {
+                                            Text(
+                                                text = stringResource(R.string.status_started),
+                                                style = MaterialTheme.typography.labelLarge,
+                                            )
+                                        }
+                                        currentServiceStatus == Status.Starting -> {
+                                            Text(
+                                                text = stringResource(R.string.status_starting),
+                                                style = MaterialTheme.typography.labelLarge,
+                                            )
+                                        }
+                                        currentServiceStatus == Status.Stopping -> {
+                                            Text(
+                                                text = stringResource(R.string.status_stopping),
+                                                style = MaterialTheme.typography.labelLarge,
+                                            )
+                                        }
+                                        else -> {
+                                            Text(
+                                                text = stringResource(R.string.action_start),
+                                                style = MaterialTheme.typography.labelLarge,
+                                            )
+                                        }
+                                    }
+                                },
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.height(64.dp),
                             )
                         }
-                    } else {
-                        ExtendedFloatingActionButton(
+                    }
+                } else {
+                    // Phone: always small circular FAB
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showFab,
+                        enter = scaleIn(),
+                        exit = scaleOut(),
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(20.dp),
+                    ) {
+                        FloatingActionButton(
                             onClick = {
                                 if (isRunning || isStopping) {
                                     dashboardViewModel.toggleService()
@@ -808,57 +875,24 @@ class MainActivity :
                                     startService()
                                 }
                             },
-                            icon = {
-                                Icon(
-                                    imageVector =
-                                    if (isRunning || isStopping) {
-                                        Icons.Default.Stop
-                                    } else {
-                                        Icons.Default.PlayArrow
-                                    },
-                                    contentDescription =
-                                    if (isRunning || isStopping) {
-                                        stringResource(R.string.stop)
-                                    } else {
-                                        stringResource(R.string.action_start)
-                                    },
-                                )
-                            },
-                            text = {
-                                when {
-                                    isRunning && dashboardUiState.serviceStartTime != null -> {
-                                        UptimeText(startTime = dashboardUiState.serviceStartTime!!)
-                                    }
-                                    currentServiceStatus == Status.Started -> {
-                                        Text(
-                                            text = stringResource(R.string.status_started),
-                                            style = MaterialTheme.typography.labelLarge,
-                                        )
-                                    }
-                                    currentServiceStatus == Status.Starting -> {
-                                        Text(
-                                            text = stringResource(R.string.status_starting),
-                                            style = MaterialTheme.typography.labelLarge,
-                                        )
-                                    }
-                                    currentServiceStatus == Status.Stopping -> {
-                                        Text(
-                                            text = stringResource(R.string.status_stopping),
-                                            style = MaterialTheme.typography.labelLarge,
-                                        )
-                                    }
-                                    else -> {
-                                        Text(
-                                            text = stringResource(R.string.action_start),
-                                            style = MaterialTheme.typography.labelLarge,
-                                        )
-                                    }
-                                }
-                            },
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.height(64.dp),
-                        )
+                        ) {
+                            Icon(
+                                imageVector =
+                                if (isRunning || isStopping) {
+                                    Icons.Default.Stop
+                                } else {
+                                    Icons.Default.PlayArrow
+                                },
+                                contentDescription =
+                                if (isRunning || isStopping) {
+                                    stringResource(R.string.stop)
+                                } else {
+                                    stringResource(R.string.action_start)
+                                },
+                            )
+                        }
                     }
                 }
             }

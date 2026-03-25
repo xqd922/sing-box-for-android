@@ -3,15 +3,24 @@ package io.nekohasekai.sfa.compose.navigation
 import android.net.Uri
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import io.nekohasekai.sfa.R
 import io.nekohasekai.sfa.compose.screen.configuration.NewProfileScreen
 import io.nekohasekai.sfa.compose.screen.connections.ConnectionDetailsRoute
 import io.nekohasekai.sfa.compose.screen.connections.ConnectionsPage
@@ -108,7 +117,9 @@ fun SFANavHost(
         }
 
         composable(Screen.Groups.route) {
-            if (groupsViewModel != null) {
+            if (serviceStatus != Status.Started && serviceStatus != Status.Starting) {
+                ServiceNotRunningPlaceholder()
+            } else if (groupsViewModel != null) {
                 GroupsCard(
                     serviceStatus = serviceStatus,
                     viewModel = groupsViewModel,
@@ -125,7 +136,9 @@ fun SFANavHost(
         }
 
         composable(Screen.Connections.route) {
-            if (connectionsViewModel != null) {
+            if (serviceStatus != Status.Started && serviceStatus != Status.Starting) {
+                ServiceNotRunningPlaceholder()
+            } else if (connectionsViewModel != null) {
                 ConnectionsPage(
                     serviceStatus = serviceStatus,
                     viewModel = connectionsViewModel,
@@ -303,6 +316,25 @@ fun SFANavHost(
             popExitTransition = slideOutToRight,
         ) {
             HookLogScreen(onBack = { navController.navigateUp() })
+        }
+    }
+}
+
+@Composable
+private fun ServiceNotRunningPlaceholder() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.status_default),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

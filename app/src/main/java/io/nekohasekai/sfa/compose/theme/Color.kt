@@ -28,5 +28,6 @@ val SeedColor = Color(0xFFD81B60)
 // Additional semantic colors
 val SuccessGreen = Color(0xFF4CAF50)
 val WarningOrange = Color(0xFFFF9800)
+val LatencyYellow = Color(0xFFFFC107)
 val ErrorRed = Color(0xFFF44336)
 val InfoBlue = Color(0xFF2196F3)

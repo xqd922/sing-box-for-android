@@ -1,40 +1,13 @@
 package io.nekohasekai.sfa.compose.screen.dashboard.groups
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,16 +15,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.nekohasekai.libbox.Libbox
 import io.nekohasekai.sfa.R
-import io.nekohasekai.sfa.compose.model.Group
 import io.nekohasekai.sfa.constant.Status
 
 @Composable
@@ -133,159 +100,11 @@ fun GroupsScreen(
                 ProxyGroupCard(
                     group = group,
                     isExpanded = uiState.expandedGroups.contains(group.tag),
-                    onToggleExpanded = remember { { onToggleExpanded(group.tag) } },
-                    onItemSelected = remember { { itemTag -> onItemSelected(group.tag, itemTag) } },
-                    onUrlTest = remember { { onUrlTest(group.tag) } },
+                    onToggleExpanded = { onToggleExpanded(group.tag) },
+                    onItemSelected = { itemTag -> onItemSelected(group.tag, itemTag) },
+                    onUrlTest = { onUrlTest(group.tag) },
                 )
             }
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ProxyGroupCard(
-    group: Group,
-    isExpanded: Boolean,
-    onToggleExpanded: () -> Unit,
-    onItemSelected: (String) -> Unit,
-    onUrlTest: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            // Header (clickable to expand/collapse)
-            Surface(
-                onClick = onToggleExpanded,
-                color = Color.Transparent,
-            ) {
-                ListItem(
-                    headlineContent = {
-                        Column {
-                            Text(
-                                text = group.tag,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    text = Libbox.proxyDisplayType(group.type),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-
-                                // Show selected item when collapsed
-                                AnimatedVisibility(
-                                    visible = !isExpanded && group.selected.isNotEmpty(),
-                                    enter = fadeIn(),
-                                    exit = fadeOut(),
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    ) {
-                                        Text(
-                                            text = "•",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                        Text(
-                                            text = group.selected,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Medium,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    trailingContent = {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // URL Test button
-                            AnimatedVisibility(
-                                visible = group.selectable,
-                                enter = slideInVertically() + fadeIn(),
-                                exit = slideOutVertically() + fadeOut(),
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        onUrlTest()
-                                        // Don't toggle expansion when clicking URL test
-                                    },
-                                    modifier = Modifier.size(40.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Speed,
-                                        contentDescription = stringResource(R.string.url_test),
-                                        modifier = Modifier.size(20.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-
-                            // Expand/Collapse indicator
-                            val rotationAngle by animateFloatAsState(
-                                targetValue = if (isExpanded) 180f else 0f,
-                                animationSpec = tween(300),
-                                label = "ExpandIcon",
-                            )
-
-                            val expandContentDescription = stringResource(R.string.expand)
-                            val collapseContentDescription = stringResource(R.string.collapse)
-                            Icon(
-                                imageVector = Icons.Default.ExpandMore,
-                                contentDescription = if (isExpanded) collapseContentDescription else expandContentDescription,
-                                modifier =
-                                Modifier
-                                    .size(24.dp)
-                                    .graphicsLayer { rotationZ = rotationAngle },
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    },
-                    colors =
-                    ListItemDefaults.colors(
-                        containerColor = Color.Transparent,
-                    ),
-                )
-            }
-
-            // Expandable content
-            AnimatedVisibility(
-                visible = isExpanded && group.items.isNotEmpty(),
-                enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
-                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(300)),
-            ) {
-                Column {
-                    androidx.compose.material3.HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                        thickness = 1.dp,
-                    )
-
-                    // Proxy Items
-                    ProxyItemsGrid(
-                        items = group.items,
-                        selectedTag = group.selected,
-                        isSelectable = group.selectable,
-                        onItemSelected = onItemSelected,
-                    )
-                }
-            }
-        }
-    }
-}
-

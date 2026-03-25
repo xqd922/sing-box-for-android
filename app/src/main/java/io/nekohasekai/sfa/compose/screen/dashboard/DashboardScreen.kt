@@ -124,8 +124,7 @@ fun DashboardScreen(
         modifier = Modifier.fillMaxSize(),
     ) {
         val bottomPadding = when {
-            showStartFab -> 88.dp
-            showStatusBar -> 74.dp
+            showStartFab || showStatusBar -> 88.dp
             else -> 0.dp
         }
         LazyColumn(

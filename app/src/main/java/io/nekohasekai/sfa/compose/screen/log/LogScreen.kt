@@ -488,8 +488,7 @@ fun LogScreen(
             } else {
                 // Log list
                 val bottomPadding = when {
-                    showStartFab -> 88.dp
-                    showStatusBar -> 74.dp
+                    showStartFab || showStatusBar -> 88.dp
                     else -> 0.dp
                 }
                 LazyColumn(
@@ -832,19 +831,16 @@ fun LogScreen(
         }
 
         // FABs - Hide during selection mode
-        val padFabVisible = isTablet && (showStartFab || showStatusBar)
+        val mainFabVisible = showStartFab || showStatusBar
         val fabBottomPadding = when {
-            padFabVisible -> 20.dp + 64.dp + 16.dp
-            showStartFab -> 88.dp
-            showStatusBar -> 74.dp
+            mainFabVisible -> 20.dp + 64.dp + 16.dp
             else -> 16.dp
         }
-        val fabEndPadding = if (isTablet) 20.dp else 16.dp
         Column(
             modifier =
             Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = fabBottomPadding, end = fabEndPadding, top = 16.dp),
+                .padding(bottom = fabBottomPadding, end = 20.dp, top = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Scroll to bottom FAB

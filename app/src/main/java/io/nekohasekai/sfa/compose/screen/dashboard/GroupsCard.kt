@@ -591,45 +591,13 @@ private fun ProxyChip(item: GroupItem, isSelected: Boolean, isSelectable: Boolea
 @Composable
 private fun ProxyLatencyBadge(delay: Int, isSelected: Boolean, modifier: Modifier = Modifier) {
     // Direct color calculation without animation for better performance
-    val colorScheme = MaterialTheme.colorScheme
     val latencyColor =
-        remember(delay, isSelected) {
+        remember(delay) {
             when {
-                delay < 100 -> {
-                    // Excellent - green/tertiary
-                    if (isSelected) {
-                        colorScheme.tertiary
-                    } else {
-                        colorScheme.tertiary.copy(alpha = 0.9f)
-                    }
-                }
-
-                delay < 300 -> {
-                    // Good - primary
-                    if (isSelected) {
-                        colorScheme.primary
-                    } else {
-                        colorScheme.primary.copy(alpha = 0.9f)
-                    }
-                }
-
-                delay < 500 -> {
-                    // Fair - secondary/warning
-                    if (isSelected) {
-                        colorScheme.secondary
-                    } else {
-                        colorScheme.secondary.copy(alpha = 0.9f)
-                    }
-                }
-
-                else -> {
-                    // Poor - error
-                    if (isSelected) {
-                        colorScheme.error
-                    } else {
-                        colorScheme.error.copy(alpha = 0.9f)
-                    }
-                }
+                delay <= 0 -> Color.Gray
+                delay <= 800 -> Color(0xFF4CAF50) // Green
+                delay <= 1500 -> Color(0xFFFF9800) // Orange
+                else -> Color(0xFFF44336) // Red
             }
         }
 

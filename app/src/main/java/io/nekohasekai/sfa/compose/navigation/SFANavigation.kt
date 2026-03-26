@@ -20,7 +20,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBar
 import io.nekohasekai.sfa.R
+import io.nekohasekai.sfa.compose.topbar.OverrideTopBar
 import io.nekohasekai.sfa.compose.screen.configuration.NewProfileScreen
 import io.nekohasekai.sfa.compose.screen.connections.ConnectionDetailsRoute
 import io.nekohasekai.sfa.compose.screen.connections.ConnectionsPage
@@ -118,7 +121,7 @@ fun SFANavHost(
 
         composable(Screen.Groups.route) {
             if (serviceStatus != Status.Started && serviceStatus != Status.Starting) {
-                ServiceNotRunningPlaceholder()
+                ServiceNotRunningPlaceholder(title = stringResource(R.string.title_groups))
             } else if (groupsViewModel != null) {
                 GroupsCard(
                     serviceStatus = serviceStatus,
@@ -137,7 +140,7 @@ fun SFANavHost(
 
         composable(Screen.Connections.route) {
             if (serviceStatus != Status.Started && serviceStatus != Status.Starting) {
-                ServiceNotRunningPlaceholder()
+                ServiceNotRunningPlaceholder(title = stringResource(R.string.title_connections))
             } else if (connectionsViewModel != null) {
                 ConnectionsPage(
                     serviceStatus = serviceStatus,
@@ -320,8 +323,14 @@ fun SFANavHost(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ServiceNotRunningPlaceholder() {
+private fun ServiceNotRunningPlaceholder(title: String) {
+    OverrideTopBar {
+        TopAppBar(
+            title = { Text(title) },
+        )
+    }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,

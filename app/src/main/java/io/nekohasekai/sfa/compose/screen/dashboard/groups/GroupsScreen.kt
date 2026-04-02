@@ -221,7 +221,7 @@ private fun ProxyGroupCard(
                         ) {
                             // URL Test button
                             AnimatedVisibility(
-                                visible = group.selectable,
+                                visible = true,
                                 enter = slideInVertically() + fadeIn(),
                                 exit = slideOutVertically() + fadeOut(),
                             ) {

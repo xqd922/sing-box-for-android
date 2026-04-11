@@ -11,6 +11,12 @@ on:
     tags:
       - "v*"
 
+env:
+  SING_BOX_CORE_VERSION: v1.13.7
+
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Android APKs
@@ -20,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: SagerNet/sing-box
-          ref: v1.13.3
+          ref: ${{ env.SING_BOX_CORE_VERSION }}
           path: sing-box
           fetch-depth: 0
 
@@ -168,7 +174,14 @@ jobs:
           body: |
             ## SFA v${{ steps.prepare.outputs.version }}
 
-            Based on sing-box core v1.13.3 (stable)
+            Personal fork release synced with upstream Android client 1.13.7.
+
+            Based on sing-box core ${{ env.SING_BOX_CORE_VERSION }}.
+
+            ### Included
+            - Synced upstream Android client changes through 1.13.7
+            - Kept fork-specific UI and behavior changes
+            - Built by GitHub Actions from tag `v${{ steps.prepare.outputs.version }}`
 
             ### Downloads
             - `SFA-*-arm64-v8a.apk` - 64-bit ARM (most devices)

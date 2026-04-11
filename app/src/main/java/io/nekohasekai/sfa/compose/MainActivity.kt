@@ -42,6 +42,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
@@ -113,6 +114,7 @@ import io.nekohasekai.sfa.compose.theme.SFATheme
 import io.nekohasekai.sfa.compose.topbar.LocalTopBarController
 import io.nekohasekai.sfa.compose.topbar.TopBarController
 import io.nekohasekai.sfa.compose.topbar.TopBarEntry
+import io.nekohasekai.sfa.constant.Action
 import io.nekohasekai.sfa.constant.Alert
 import io.nekohasekai.sfa.constant.ServiceMode
 import io.nekohasekai.sfa.constant.Status
@@ -225,6 +227,10 @@ class MainActivity :
             pendingNavigationRoute.value = "settings/privilege"
         }
         val uri = intent.data ?: return
+        if (intent.action == Action.OPEN_URL) {
+            launchCustomTab(uri.toString())
+            return
+        }
         if (uri.scheme == "sing-box" && uri.host == "import-remote-profile") {
             try {
                 val profile = Libbox.parseRemoteProfileImportLink(uri.toString())
@@ -565,10 +571,22 @@ class MainActivity :
                                 color = MaterialTheme.colorScheme.error,
                             )
                         } else {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(stringResource(R.string.downloading))
+                            val progress by UpdateState.downloadProgress
+                            Column {
+                                if (progress != null) {
+                                    Text("${stringResource(R.string.downloading)} ${(progress!! * 100).toInt()}%")
+                                } else {
+                                    Text(stringResource(R.string.downloading))
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if (progress != null) {
+                                    LinearProgressIndicator(
+                                        progress = { progress!! },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                } else {
+                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                }
                             }
                         }
                     }
@@ -580,6 +598,7 @@ class MainActivity :
                             downloadJob = null
                             showDownloadDialog = false
                             downloadError = null
+                            UpdateState.downloadProgress.value = null
                         },
                     ) {
                         Text(stringResource(if (downloadError != null) R.string.ok else android.R.string.cancel))

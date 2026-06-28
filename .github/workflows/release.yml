@@ -29,10 +29,10 @@ jobs:
         run: |
           git clone --depth=1 --branch v1.13.14 https://github.com/SagerNet/sing-box.git
           cd sing-box
-          go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.12
-          go install github.com/sagernet/gomobile/cmd/gobind@v0.1.12
+          go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.13
+          go install github.com/sagernet/gomobile/cmd/gobind@v0.1.13
           export PATH=$PATH:$(go env GOPATH)/bin
-          gomobile bind -v -o libbox.aar -target android -androidapi 21 -javapkg=io.nekohasekai -libname=box ./experimental/libbox
+          gomobile bind -v -o libbox.aar -target android -androidapi 21 -javapkg=io.nekohasekai -libname=box -ldflags="-checklinkname=0" ./experimental/libbox
 
       - uses: actions/upload-artifact@v4
         with:

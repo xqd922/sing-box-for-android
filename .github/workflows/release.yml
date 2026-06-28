@@ -52,6 +52,13 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      - name: Setup signing
+        run: |
+          echo "KEYSTORE_PASS=${{ secrets.KEYSTORE_PASS }}" > local.properties
+          echo "ALIAS_NAME=${{ secrets.ALIAS_NAME }}" >> local.properties
+          echo "ALIAS_PASS=${{ secrets.ALIAS_PASS }}" >> local.properties
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+
       - uses: actions/download-artifact@v4
         with:
           name: libbox

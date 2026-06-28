@@ -8,12 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      UPSTREAM_VERSION: "1.13.14"
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
 
       - uses: actions/setup-java@v4
         with:
@@ -22,21 +20,35 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
-      - name: Setup NDK 26
+      - name: Extract libbox.aar from upstream APK
         run: |
-          sdkmanager "ndk;26.1.10909125"
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125" >> $GITHUB_ENV
+          mkdir -p app/libs /tmp/libbox-extract /tmp/libbox-aar/jni
 
-      - name: Build libbox
-        run: |
-          mkdir -p app/libs
-          git clone --depth=1 --branch v1.13.14 https://github.com/SagerNet/sing-box.git ../sing-box
-          cd ../sing-box
-          go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.13
-          go install github.com/sagernet/gomobile/cmd/gobind@v0.1.13
-          export PATH=$PATH:$(go env GOPATH)/bin
-          gomobile bind -v -o libbox.aar -target android -androidapi 21 -javapkg=io.nekohasekai -libname=box ./experimental/libbox
-          cp libbox.aar ${GITHUB_WORKSPACE}/app/libs/
+          # Download upstream universal APK
+          gh release download "v${UPSTREAM_VERSION}" -R SagerNet/sing-box \
+            -p "SFA-${UPSTREAM_VERSION}-universal.apk" --skip-existing
+
+          # Extract APK (it's a zip)
+          cd /tmp/libbox-extract
+          unzip -o "${GITHUB_WORKSPACE}/SFA-${UPSTREAM_VERSION}-universal.apk"
+
+          # Copy classes.jar (contains libbox Java bindings)
+          cp classes.jar /tmp/libbox-aar/classes.jar
+
+          # Copy native .so libraries
+          cp -r lib/* /tmp/libbox-aar/jni/ 2>/dev/null || true
+          cp -r jni/* /tmp/libbox-aar/jni/ 2>/dev/null || true
+
+          # Create AndroidManifest.xml
+          cat > /tmp/libbox-aar/AndroidManifest.xml << 'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="io.nekohasekai.libbox">
+          </manifest>
+          EOF
+
+          # Package as AAR
+          cd /tmp/libbox-aar
+          zip -r ${GITHUB_WORKSPACE}/app/libs/libbox.aar .
 
       - name: Build
         run: ./gradlew assembleOtherRelease

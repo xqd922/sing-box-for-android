@@ -32,7 +32,10 @@ jobs:
           go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.13
           go install github.com/sagernet/gomobile/cmd/gobind@v0.1.13
           export PATH=$PATH:$(go env GOPATH)/bin
-          gomobile bind -v -o libbox.aar -target android -androidapi 21 -javapkg=io.nekohasekai -libname=box -ldflags="-checklinkname=0" ./experimental/libbox
+          gomobile bind -v -o libbox.aar -target android -androidapi 21 -javapkg=io.nekohasekai -libname=box \
+            -tags "with_gvisor,with_quic,with_wireguard,with_utls,with_naive_outbound,with_clash_api,with_acme,badlinkname" \
+            -ldflags="-checklinkname=0 -s -w" \
+            ./experimental/libbox
 
       - uses: actions/upload-artifact@v4
         with:

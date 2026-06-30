@@ -1,12 +1,17 @@
-# Changelog
+# 更新日志
+
+## v0.0.3
+- 修复分组头部 "selector" 标签被推到最右侧的问题，现在紧跟在分组名称后面。
+- 修复节点选择缓慢的问题，优化选中状态刷新逻辑。
+- 修复快速点击时同时选中两个节点的问题，添加点击防抖。
 
 ## v0.0.2
-- Fix long node names being silently clipped in group view — now ellipsized with "...".
-- Fix long group names pushing buttons off-screen — now ellipsized and fills remaining space.
-- Dropdown selector now ellipsizes the selected name; popup list shows full names.
+- 修复分组视图中长节点名被截断的问题，现在显示省略号。
+- 修复长分组名将按钮挤出屏幕的问题，现在自动省略并填充剩余空间。
+- 下拉选择器中选中的名称过长时显示省略号，弹出列表显示完整名称。
 
 ## v0.0.1
-- Initial Android release workflow.
-- Build `libbox` in CI and package the release APK.
-- Add signing config support for GitHub Actions secrets.
-- Pin the toolchain and build flags for `sing-box` / `libbox` compatibility.
+- 初始 Android 发布工作流。
+- CI 构建 `libbox` 并打包发布 APK。
+- 支持 GitHub Actions secrets 签名配置。
+- 固定工具链和构建参数以兼容 `sing-box` / `libbox`。

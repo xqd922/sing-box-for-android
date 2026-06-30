@@ -246,7 +246,7 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
             }
         }
 
-        private var isSelecting = false
+        internal var isSelecting = false
 
         fun updateSelected(group: Group, itemTag: String) {
             val oldSelected = items.indexOfFirst { it.tag == group.selected }

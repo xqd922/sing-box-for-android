@@ -152,11 +152,15 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
         private lateinit var items: List<GroupItem>
         private lateinit var adapter: ItemAdapter
         private var textWatcher: TextWatcher? = null
+        private var pendingSelection: String? = null
 
         @OptIn(DelicateCoroutinesApi::class)
         @SuppressLint("NotifyDataSetChanged")
         fun bind(group: Group) {
             this.group = group
+            if (pendingSelection != null) {
+                group.selected = pendingSelection!!
+            }
             binding.groupName.text = group.tag
             binding.groupType.text = Libbox.proxyDisplayType(group.type)
             binding.urlTestButton.setOnClickListener {
@@ -230,6 +234,9 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
                                     binding.root.context.errorDialogBuilder(it).show()
                                 }
                             }
+                            withContext(Dispatchers.Main) {
+                                clearPendingSelection()
+                            }
                         }
                     }
                 }
@@ -246,11 +253,10 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
             }
         }
 
-        internal var isSelecting = false
-
         fun updateSelected(group: Group, itemTag: String) {
             val oldSelected = items.indexOfFirst { it.tag == group.selected }
             val newSelected = items.indexOfFirst { it.tag == itemTag }
+            pendingSelection = itemTag
             group.selected = itemTag
             if (oldSelected != -1) {
                 adapter.notifyItemChanged(oldSelected)
@@ -258,6 +264,10 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
             if (newSelected != -1) {
                 adapter.notifyItemChanged(newSelected)
             }
+        }
+
+        fun clearPendingSelection() {
+            pendingSelection = null
         }
     }
 
@@ -309,8 +319,6 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
         fun bind(groupView: GroupView, group: Group, item: GroupItem) {
             if (group.selectable) {
                 binding.itemCard.setOnClickListener {
-                    if (groupView.isSelecting) return@setOnClickListener
-                    groupView.isSelecting = true
                     groupView.updateSelected(group, item.tag)
                     GlobalScope.launch {
                         runCatching {
@@ -322,7 +330,7 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
                             }
                         }
                         withContext(Dispatchers.Main) {
-                            groupView.isSelecting = false
+                            groupView.clearPendingSelection()
                         }
                     }
                 }

@@ -246,11 +246,17 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
             }
         }
 
+        private var isSelecting = false
+
         fun updateSelected(group: Group, itemTag: String) {
             val oldSelected = items.indexOfFirst { it.tag == group.selected }
+            val newSelected = items.indexOfFirst { it.tag == itemTag }
             group.selected = itemTag
             if (oldSelected != -1) {
                 adapter.notifyItemChanged(oldSelected)
+            }
+            if (newSelected != -1) {
+                adapter.notifyItemChanged(newSelected)
             }
         }
     }
@@ -303,7 +309,8 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
         fun bind(groupView: GroupView, group: Group, item: GroupItem) {
             if (group.selectable) {
                 binding.itemCard.setOnClickListener {
-                    binding.selectedView.isVisible = true
+                    if (groupView.isSelecting) return@setOnClickListener
+                    groupView.isSelecting = true
                     groupView.updateSelected(group, item.tag)
                     GlobalScope.launch {
                         runCatching {
@@ -313,6 +320,9 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
                                 binding.root.context.errorDialogBuilder("select outbound: ${it.localizedMessage}")
                                     .show()
                             }
+                        }
+                        withContext(Dispatchers.Main) {
+                            groupView.isSelecting = false
                         }
                     }
                 }

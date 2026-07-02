@@ -793,7 +793,15 @@ class MainActivity :
                     currentServiceStatus == Status.Started || currentServiceStatus == Status.Starting
                 val isStopping = currentServiceStatus == Status.Stopping
 
-                if (currentServiceStatus == Status.Stopped) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = showFab,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut(),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(20.dp),
+                ) {
+                    if (currentServiceStatus == Status.Stopped) {
                     FloatingActionButton(
                         onClick = { startService() },
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -864,6 +872,7 @@ class MainActivity :
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.height(64.dp),
                     )
+                }
                 }
             }
         }

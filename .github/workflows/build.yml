@@ -12,7 +12,7 @@ on:
       - "v*"
 
 env:
-  SING_BOX_CORE_VERSION: v1.13.7
+  SING_BOX_CORE_VERSION: v1.13.14
 
 permissions:
   contents: write
@@ -38,7 +38,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "~1.25.8"
+          go-version: "~1.25.11"
 
       - name: Setup Android NDK
         id: setup-ndk
@@ -82,7 +82,7 @@ jobs:
           cat > version.properties << EOF
           VERSION_CODE=${VERSION_CODE}
           VERSION_NAME=${{ inputs.version }}
-          GO_VERSION=go1.25.8
+          GO_VERSION=go1.25.11
           EOF
 
       - name: Generate signing keystore
@@ -174,12 +174,12 @@ jobs:
           body: |
             ## SFA v${{ steps.prepare.outputs.version }}
 
-            Personal fork release synced with upstream Android client 1.13.7.
+            Personal fork release synced with upstream Android client 1.13.14.
 
             Based on sing-box core ${{ env.SING_BOX_CORE_VERSION }}.
 
             ### Included
-            - Synced upstream Android client changes through 1.13.7
+            - Synced upstream Android client changes through 1.13.14
             - Kept fork-specific UI and behavior changes
             - Built by GitHub Actions from tag `v${{ steps.prepare.outputs.version }}`
 

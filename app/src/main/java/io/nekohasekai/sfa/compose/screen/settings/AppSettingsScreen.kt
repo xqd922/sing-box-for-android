@@ -9,9 +9,13 @@ import android.net.Uri
 import android.os.Build
 import android.text.format.Formatter
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.DeleteForever
@@ -44,6 +49,8 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,6 +79,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -83,6 +91,7 @@ import io.nekohasekai.sfa.R
 import io.nekohasekai.sfa.compose.component.UpdateAvailableDialog
 import io.nekohasekai.sfa.compose.topbar.OverrideTopBar
 import io.nekohasekai.sfa.database.Settings
+import io.nekohasekai.sfa.ktx.clipboardText
 import io.nekohasekai.sfa.update.UpdateCheckException
 import io.nekohasekai.sfa.update.UpdateSource
 import io.nekohasekai.sfa.update.UpdateState
@@ -99,7 +108,7 @@ import java.io.File
 import java.util.Locale
 import android.provider.Settings as AndroidSettings
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AppSettingsScreen(navController: NavController) {
     OverrideTopBar {
@@ -142,6 +151,7 @@ fun AppSettingsScreen(navController: NavController) {
     var downloadJob by remember { mutableStateOf<Job?>(null) }
     var downloadError by remember { mutableStateOf<String?>(null) }
     var showUpdateAvailableDialog by remember { mutableStateOf(false) }
+    var showVersionMenu by remember { mutableStateOf(false) }
 
     var notificationEnabled by remember { mutableStateOf(true) }
     var dynamicNotification by remember { mutableStateOf(Settings.dynamicNotification) }
@@ -186,7 +196,7 @@ fun AppSettingsScreen(navController: NavController) {
             val channel = Application.notification.getNotificationChannel("service")
             notificationEnabled = channel?.importance != NotificationManager.IMPORTANCE_NONE
         } else {
-            notificationEnabled = Application.notification.areNotificationsEnabled()
+            notificationEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
         }
         if (silentInstallEnabled) {
             scope.launch {
@@ -433,39 +443,70 @@ fun AppSettingsScreen(navController: NavController) {
             ),
         ) {
             Column {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            stringResource(R.string.app_version_title),
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            BuildConfig.VERSION_NAME,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    },
-                    trailingContent = {
-                        if (hasUpdate) {
-                            Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("New") }
+                Box {
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.app_version_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                BuildConfig.VERSION_NAME,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Outlined.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        },
+                        trailingContent = {
+                            if (hasUpdate) {
+                                Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("New") }
+                            }
+                        },
+                        modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                            .combinedClickable(
+                                onClick = {},
+                                onLongClick = { showVersionMenu = true },
+                            ),
+                        colors =
+                        ListItemDefaults.colors(
+                            containerColor = Color.Transparent,
+                        ),
+                    )
+                    Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                        DropdownMenu(
+                            expanded = showVersionMenu,
+                            onDismissRequest = { showVersionMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.per_app_proxy_action_copy)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.ContentCopy,
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    clipboardText = BuildConfig.VERSION_NAME
+                                    Toast.makeText(
+                                        context,
+                                        R.string.copied_to_clipboard,
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                    showVersionMenu = false
+                                },
+                            )
                         }
-                    },
-                    modifier =
-                    Modifier
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
-                    colors =
-                    ListItemDefaults.colors(
-                        containerColor = Color.Transparent,
-                    ),
-                )
+                    }
+                }
 
                 ListItem(
                     headlineContent = {
